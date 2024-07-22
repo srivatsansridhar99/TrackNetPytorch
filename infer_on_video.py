@@ -164,10 +164,11 @@ if __name__ == '__main__':
     parser.add_argument('--video_path', type=str, help='path to input video')
     parser.add_argument('--video_out_path', type=str, help='path to output video')
     parser.add_argument('--extrapolation', action='store_true', help='whether to use ball track extrapolation')
+    parser.add_argument('--device', type=str, default='cpu')
     args = parser.parse_args()
     
     model = BallTrackerNet()
-    device = 'cuda'
+    device = args.device
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     model = model.to(device)
     model.eval()
