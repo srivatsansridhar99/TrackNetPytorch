@@ -42,6 +42,7 @@ def infer_model(frames, model):
     width = 640
     dists = [-1]*2
     ball_track = [(None,None)]*2
+    out_frames = []
     for num in tqdm(range(2, len(frames))):
         img = cv2.resize(frames[num], (width, height))
         img_prev = cv2.resize(frames[num-1], (width, height))
@@ -55,13 +56,13 @@ def infer_model(frames, model):
         output = out.argmax(dim=1).detach().cpu().numpy()
         x_pred, y_pred = postprocess(output)
         ball_track.append((x_pred, y_pred))
-
+        out_frames.append(img)
         if ball_track[-1][0] and ball_track[-2][0]:
             dist = distance.euclidean(ball_track[-1], ball_track[-2])
         else:
             dist = -1
         dists.append(dist)  
-    return ball_track, dists 
+    return ball_track, dists, out_frames
 
 def remove_outliers(ball_track, dists, max_dist = 100):
     """ Remove outliers from model prediction    
@@ -176,7 +177,7 @@ if __name__ == '__main__':
     model.eval()
     
     frames, fps = read_video(args.video_path)
-    ball_track, dists = infer_model(frames, model)
+    ball_track, dists, out_frames = infer_model(frames, model)
     ball_track = remove_outliers(ball_track, dists)    
     
     if args.extrapolation:
@@ -186,7 +187,7 @@ if __name__ == '__main__':
             ball_subtrack = interpolation(ball_subtrack)
             ball_track[r[0]:r[1]] = ball_subtrack
         
-    write_track(frames, ball_track, args.video_out_path, fps)    
+    write_track(out_frames, ball_track, args.video_out_path, fps)
     
     
     
