@@ -187,7 +187,7 @@ if __name__ == '__main__':
             ball_subtrack = interpolation(ball_subtrack)
             ball_track[r[0]:r[1]] = ball_subtrack
         
-    write_track(out_frames, ball_track, args.video_out_path, fps)
+    write_track(frames, ball_track, args.video_out_path, fps)
     
     
     
