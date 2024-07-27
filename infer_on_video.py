@@ -141,7 +141,9 @@ def write_track(frames, ball_track, path_output_video, fps, trace=7):
         trace: number of frames with detected trace
     """
     height, width = frames[0].shape[:2]
-    out = cv2.VideoWriter(path_output_video, cv2.VideoWriter_fourcc(*'DIVX'), 
+    # out = cv2.VideoWriter(path_output_video, cv2.VideoWriter_fourcc(*'DIVX'),
+    #                       fps, (width, height))
+    out = cv2.VideoWriter(path_output_video, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
                           fps, (width, height))
     for num in range(len(frames)):
         frame = frames[num]
