@@ -64,7 +64,7 @@ def infer_model(frames, model):
         dists.append(dist)  
     return ball_track, dists, out_frames
 
-def remove_outliers(ball_track, dists, max_dist = 100):
+def remove_outliers(ball_track, dists, max_dist = 20):
     """ Remove outliers from model prediction    
     :params
         ball_track: list of detected ball points
