@@ -179,7 +179,9 @@ if __name__ == '__main__':
     frames, fps = read_video(args.video_path)
     ball_track, dists, out_frames = infer_model(frames, model)
     ball_track = remove_outliers(ball_track, dists)    
-    
+    with open('ball_dist.txt', 'w+') as f:
+        f.write(str(dists))
+        f.close()
     if args.extrapolation:
         subtracks = split_track(ball_track)
         for r in subtracks:
