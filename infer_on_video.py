@@ -82,7 +82,7 @@ def remove_outliers(ball_track, dists, max_dist = 20):
             ball_track[i-1] = (None, None)
     return ball_track  
 
-def split_track(ball_track, max_gap=4, max_dist_gap=80, min_track=5):
+def split_track(ball_track, max_gap=4, max_dist_gap=30, min_track=5):
     """ Split ball track into several subtracks in each of which we will perform
     ball interpolation.    
     :params
