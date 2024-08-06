@@ -178,16 +178,28 @@ if __name__ == '__main__':
     
     frames, fps = read_video(args.video_path)
     ball_track, dists, out_frames = infer_model(frames, model)
-    ball_track = remove_outliers(ball_track, dists)    
+    with open('ball_track_raw.txt', 'w+') as f:
+        f.write(str(ball_track))
+        f.close()
+    ball_track = remove_outliers(ball_track, dists)
+    with open('ball_track_outlier.txt', 'w+') as f:
+        f.write(str(ball_track))
+        f.close()
     with open('ball_dist.txt', 'w+') as f:
         f.write(str(dists))
         f.close()
     if args.extrapolation:
         subtracks = split_track(ball_track)
+        with open('subtracks.txt', 'w+') as f:
+            f.write(str(subtracks))
+            f.close()
         for r in subtracks:
             ball_subtrack = ball_track[r[0]:r[1]]
             ball_subtrack = interpolation(ball_subtrack)
             ball_track[r[0]:r[1]] = ball_subtrack
+        with open('ball_track_extrapolated.txt', 'w+') as f:
+            f.write(str(ball_track))
+            f.close()
         
     write_track(frames, ball_track, args.video_out_path, fps)
     
