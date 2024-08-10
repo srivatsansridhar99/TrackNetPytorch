@@ -43,6 +43,7 @@ def infer_model(frames, model, log_file):
         ball_track: list of detected ball points
         dists: list of euclidean distances between two neighbouring ball points
     """
+    model_results = open('../model_results.txt', 'w+')
     height = 360
     width = 640
     dists = [-1]*2
@@ -61,6 +62,7 @@ def infer_model(frames, model, log_file):
         inp = np.expand_dims(imgs, axis=0)
         inf_start = time.time()
         out = model(torch.from_numpy(inp).float().to(device))
+        model_results.write(f'Iteration: {num} \n {out} \n \n')
         inf_end = time.time()
 
         output = out.argmax(dim=1).detach().cpu().numpy()
@@ -73,7 +75,9 @@ def infer_model(frames, model, log_file):
             dist = distance.euclidean(ball_track[-1], ball_track[-2])
         else:
             dist = -1
-        dists.append(dist)  
+        dists.append(dist)
+
+    model_results.close()
     return ball_track, dists, out_frames
 
 def remove_outliers(ball_track, dists, max_dist = 20):
