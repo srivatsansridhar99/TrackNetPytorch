@@ -62,7 +62,7 @@ def infer_model(frames, model, log_file):
         output = out.argmax(dim=1).detach().cpu().numpy()
         x_pred, y_pred = postprocess(output)
         post_process = time.time()
-        log_file.write(f'Model inference iter {num} inference time: {inf_end - inf_start} post process time: {post_process - inf_end}')
+        log_file.write(f'Model inference iter {num} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
         ball_track.append((x_pred, y_pred))
         out_frames.append(img)
         if ball_track[-1][0] and ball_track[-2][0]:
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     
     frames, fps = read_video(args.video_path)
     read_video_time = time.time()
-    log_file.write(f'time taken to read video {read_video_time} - {load_time} \n \n')
+    log_file.write(f'time taken to read video {read_video_time - load_time} \n \n')
     ball_track, dists, out_frames = infer_model(frames, model, log_file)
     inference_time = time.time()
     log_file.write(f'{inference_time} - {read_video_time}')
