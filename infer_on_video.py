@@ -10,8 +10,8 @@ from scipy.spatial import distance
 import time
 
 # set number of intra op threads == 4
-torch.set_num_threads(4)
-torch.set_num_interop_threads(4)
+torch.set_num_threads(2)
+torch.set_num_interop_threads(2)
 
 def read_video(path_video):
     """ Read video file    
