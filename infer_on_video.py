@@ -9,6 +9,9 @@ from itertools import groupby
 from scipy.spatial import distance
 import time
 
+# set number of intra op threads
+torch.set_num_threads(4)
+
 def read_video(path_video):
     """ Read video file    
     :params
