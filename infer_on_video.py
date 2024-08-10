@@ -8,10 +8,40 @@ import argparse
 from itertools import groupby
 from scipy.spatial import distance
 import time
+from torch.utils.data import Dataset, DataLoader
+
 
 # set number of intra op threads == 4
 torch.set_num_threads(2)
 torch.set_num_interop_threads(2)
+
+# Dataloader class
+class trackNetDataset(Dataset):
+    def __init__(self, image_list):
+        self.image_list = image_list
+        self.width = 640
+        self.height = 320
+
+    def __len__(self):
+        return len(self.image_list)
+
+    def process_images(self, idx):
+        img = cv2.resize(self.image_list[idx], (self.width, self.height))
+        img_prev = cv2.resize(self.image_list[idx - 1], (self.width, self.height))
+        img_preprev = cv2.resize(self.image_list[idx - 2], (self.width, self.height))
+        if idx < 2:
+            imgs = np.concatenate((img, img_prev, img_preprev), axis=2)
+        else:
+            imgs = np.concatenate((img, img, img), axis=2)
+        imgs = imgs.astype(np.float32) / 255.0
+        imgs = np.rollaxis(imgs, 2, 0)
+        inp = np.expand_dims(imgs, axis=0)
+        return inp
+
+    def __getitem__(self, idx):
+        processed_img = self.process_images(idx)
+        return processed_img
+
 
 def read_video(path_video):
     """ Read video file    
@@ -49,24 +79,27 @@ def infer_model(frames, model, log_file):
     ball_track = [(None,None)]*2
     out_frames = []
 
+    infer_dataset = trackNetDataset(frames)
+    infer_dataloader = DataLoader(infer_dataset, batch_size=8)
 
+    # for num in tqdm(range(2, len(frames))):
+        # img = cv2.resize(frames[num], (width, height))
+        # img_prev = cv2.resize(frames[num-1], (width, height))
+        # img_preprev = cv2.resize(frames[num-2], (width, height))
+        # imgs = np.concatenate((img, img_prev, img_preprev), axis=2)
+        # imgs = imgs.astype(np.float32)/255.0
+        # imgs = np.rollaxis(imgs, 2, 0)
+        # inp = np.expand_dims(imgs, axis=0)
 
-    for num in tqdm(range(2, len(frames))):
-        img = cv2.resize(frames[num], (width, height))
-        img_prev = cv2.resize(frames[num-1], (width, height))
-        img_preprev = cv2.resize(frames[num-2], (width, height))
-        imgs = np.concatenate((img, img_prev, img_preprev), axis=2)
-        imgs = imgs.astype(np.float32)/255.0
-        imgs = np.rollaxis(imgs, 2, 0)
-        inp = np.expand_dims(imgs, axis=0)
+    for i, batch in enumerate(infer_dataloader):
         inf_start = time.time()
-        out = model(torch.from_numpy(inp).float().to(device))
+        out = model(torch.from_numpy(batch).float().to(device))
         inf_end = time.time()
 
         output = out.argmax(dim=1).detach().cpu().numpy()
         x_pred, y_pred = postprocess(output)
         post_process = time.time()
-        log_file.write(f'Model inference iter {num} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
+        log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
         ball_track.append((x_pred, y_pred))
         out_frames.append(img)
         if ball_track[-1][0] and ball_track[-2][0]:
