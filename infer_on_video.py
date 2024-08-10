@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 from itertools import groupby
 from scipy.spatial import distance
+import time
 
 def read_video(path_video):
     """ Read video file    
@@ -29,7 +30,7 @@ def read_video(path_video):
     cap.release()
     return frames, fps
 
-def infer_model(frames, model):
+def infer_model(frames, model, log_file):
     """ Run pretrained model on a consecutive list of frames    
     :params
         frames: list of consecutive video frames
@@ -43,6 +44,9 @@ def infer_model(frames, model):
     dists = [-1]*2
     ball_track = [(None,None)]*2
     out_frames = []
+
+
+
     for num in tqdm(range(2, len(frames))):
         img = cv2.resize(frames[num], (width, height))
         img_prev = cv2.resize(frames[num-1], (width, height))
@@ -51,10 +55,14 @@ def infer_model(frames, model):
         imgs = imgs.astype(np.float32)/255.0
         imgs = np.rollaxis(imgs, 2, 0)
         inp = np.expand_dims(imgs, axis=0)
-
+        inf_start = time.time()
         out = model(torch.from_numpy(inp).float().to(device))
+        inf_end = time.time()
+
         output = out.argmax(dim=1).detach().cpu().numpy()
         x_pred, y_pred = postprocess(output)
+        post_process = time.time()
+        log_file.write(f'Model inference iter {num} inference time: {inf_end - inf_start} post process time: {post_process - inf_end}')
         ball_track.append((x_pred, y_pred))
         out_frames.append(img)
         if ball_track[-1][0] and ball_track[-2][0]:
@@ -160,7 +168,8 @@ def write_track(frames, ball_track, path_output_video, fps, trace=7):
     out.release()    
 
 if __name__ == '__main__':
-    
+    log_file = open('../model_inference_times.txt', 'w+')
+    start_time = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     parser.add_argument('--model_path', type=str, help='path to model')
@@ -169,27 +178,46 @@ if __name__ == '__main__':
     parser.add_argument('--extrapolation', action='store_true', help='whether to use ball track extrapolation')
     parser.add_argument('--device', type=str, default='cpu')
     args = parser.parse_args()
+    arg_time = time.time()
+    log_file.write(f'time taken for arg parsing {arg_time - start_time} \n \n')
     
     model = BallTrackerNet()
     device = args.device
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     model = model.to(device)
     model.eval()
+
+    load_time = time.time()
+    log_file.write(f'time taken to load model {load_time - arg_time} \n \n')
     
     frames, fps = read_video(args.video_path)
-    ball_track, dists, out_frames = infer_model(frames, model)
+    read_video_time = time.time()
+    log_file.write(f'time taken to read video {read_video_time} - {load_time} \n \n')
+    ball_track, dists, out_frames = infer_model(frames, model, log_file)
+    inference_time = time.time()
+    log_file.write(f'{inference_time} - {read_video_time}')
     with open('ball_track_raw.txt', 'w+') as f:
         f.write(str(ball_track))
         f.close()
+    save_time = time.time()
+    log_file.write(f'time taken to save ball track file: {save_time - inference_time} \n \n')
     ball_track = remove_outliers(ball_track, dists)
+    remove_out_time = time.time()
+    log_file.write(f'time taken to remove outliers {remove_out_time - save_time} \n \n')
     with open('ball_track_outlier.txt', 'w+') as f:
         f.write(str(ball_track))
         f.close()
+    save_outlier = time.time()
+    log_file.write(f'time taken to save outliers {save_outlier - remove_out_time}')
     with open('ball_dist.txt', 'w+') as f:
         f.write(str(dists))
         f.close()
+    save_dist = time.time()
+    log_file.write(f'time to taken save dist {save_dist - save_outlier} \n \n')
     if args.extrapolation:
         subtracks = split_track(ball_track)
+        split_track_time = time.time()
+        log_file.write(f'split track time {split_track_time - save_dist} \n \n')
         with open('subtracks.txt', 'w+') as f:
             f.write(str(subtracks))
             f.close()
@@ -197,11 +225,14 @@ if __name__ == '__main__':
             ball_subtrack = ball_track[r[0]:r[1]]
             ball_subtrack = interpolation(ball_subtrack)
             ball_track[r[0]:r[1]] = ball_subtrack
+        interp_time = time.time()
+        log_file.write(f'interpolation time {interp_time - split_track_time} \n \n')
         with open('ball_track_extrapolated.txt', 'w+') as f:
             f.write(str(ball_track))
             f.close()
         
     write_track(frames, ball_track, args.video_out_path, fps)
+    log_file.close()
     
     
     
