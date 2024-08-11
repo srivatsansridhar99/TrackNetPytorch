@@ -101,5 +101,15 @@ def postprocess(feature_map, scale=2):
             y = circles[0][0][1]*scale
     return x, y
 
+def process_batch(batch_output, scale=2):
+    """
+    Process a batch of feature maps
+    """
+    results = []
+    for feature_map in batch_output:
+        x, y = postprocess(feature_map, scale)
+        results.append((x, y))
+    return results
+
 
 

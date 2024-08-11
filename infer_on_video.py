@@ -3,7 +3,7 @@ import traceback
 from model import BallTrackerNet
 import torch
 import cv2
-from general import postprocess
+from general import postprocess, process_batch
 from tqdm import tqdm
 import numpy as np
 import argparse
@@ -101,23 +101,49 @@ def infer_model(frames, model, log_file, args):
             out = model(batch.to(device))
         inf_end = time.time()
         model_results.write(f'Batch: {i} \n {out} \n {out.shape} \n \n')
-        output = out.argmax(dim=1).detach().cpu().numpy()
+        # output = out.argmax(dim=1).detach().cpu().numpy()
+        # try:
+        #     x_pred, y_pred = postprocess(output)
+        #     # post_process = time.time()
+        #     # log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
+        #     ball_track.append((x_pred, y_pred))
+        # except:
+        #     print(traceback.format_exc())
+        #     continue
+        # for j in range(start_idx, start_idx + args.batch_size):
+        #     img = cv2.resize(frames[j], (width, height))
+        #     out_frames.append(img)
+        # if ball_track[-1][0] and ball_track[-2][0]:
+        #     dist = distance.euclidean(ball_track[-1], ball_track[-2])
+        # else:
+        #     dist = -1
+        # dists.append(dist)
+
+        output = out.detach().cpu().numpy()
         try:
-            x_pred, y_pred = postprocess(output)
-            # post_process = time.time()
-            # log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
-            ball_track.append((x_pred, y_pred))
-        except:
+            batch_results = process_batch(output)
+            for x_pred, y_pred in batch_results:
+                ball_track.append((x_pred, y_pred))
+                if ball_track[-1][0] is not None and ball_track[-2][0] is not None:
+                    dist = distance.euclidean(ball_track[-1], ball_track[-2])
+                else:
+                    dist = -1
+                dists.append(dist)
+        except Exception as e:
+            print(f"Error in postprocessing: {str(e)}")
             print(traceback.format_exc())
             continue
-        for j in range(start_idx, start_idx + args.batch_size):
+
+        for j in range(start_idx, min(start_idx + args.batch_size, len(frames))):
             img = cv2.resize(frames[j], (width, height))
             out_frames.append(img)
-        if ball_track[-1][0] and ball_track[-2][0]:
-            dist = distance.euclidean(ball_track[-1], ball_track[-2])
-        else:
-            dist = -1
-        dists.append(dist)  
+
+        start_idx += args.batch_size
+
+        post_process = time.time()
+        log_file.write(
+            f'Batch {i} inference time: {inf_end - inf_start}, post process time: {post_process - inf_end}\n')
+
     return ball_track, dists, out_frames
 
 def remove_outliers(ball_track, dists, max_dist = 20):
