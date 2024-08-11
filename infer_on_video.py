@@ -83,7 +83,7 @@ def infer_model(frames, model, log_file, args):
     out_frames = []
     model_results = open('../model_results.txt', 'w+')
     infer_dataset = trackNetDataset(frames)
-    infer_dataloader = DataLoader(infer_dataset, batch_size=args.batch_size)
+    infer_dataloader = DataLoader(infer_dataset, batch_size=args.batch_size, num_workers=6)
 
     # for num in tqdm(range(2, len(frames))):
         # img = cv2.resize(frames[num], (width, height))
@@ -100,7 +100,7 @@ def infer_model(frames, model, log_file, args):
         with torch.no_grad():
             out = model(batch.to(device))
         inf_end = time.time()
-        model_results.write(f'Batch: {i} \n {out} \n {out.shape} \n \n')
+        model_results.write(f'Batch: {i} \n {str(out)} \n {out.shape} \n \n')
         # output = out.argmax(dim=1).detach().cpu().numpy()
         # try:
         #     x_pred, y_pred = postprocess(output)
