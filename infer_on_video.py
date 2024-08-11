@@ -1,3 +1,5 @@
+import traceback
+
 from model import BallTrackerNet
 import torch
 import cv2
@@ -19,6 +21,7 @@ torch.set_num_interop_threads(2)
 class trackNetDataset(Dataset):
     def __init__(self, image_list):
         self.image_list = image_list
+        # self.return_image_list = image_list[start_index: ]
         self.width = 640
         self.height = 320
 
@@ -64,7 +67,7 @@ def read_video(path_video):
     cap.release()
     return frames, fps
 
-def infer_model(frames, model, log_file):
+def infer_model(frames, model, log_file, args):
     """ Run pretrained model on a consecutive list of frames    
     :params
         frames: list of consecutive video frames
@@ -78,9 +81,9 @@ def infer_model(frames, model, log_file):
     dists = [-1]*2
     ball_track = [(None,None)]*2
     out_frames = []
-
+    model_results = open('../model_results.txt', 'w+')
     infer_dataset = trackNetDataset(frames)
-    infer_dataloader = DataLoader(infer_dataset, batch_size=8)
+    infer_dataloader = DataLoader(infer_dataset, batch_size=args.batch_size)
 
     # for num in tqdm(range(2, len(frames))):
         # img = cv2.resize(frames[num], (width, height))
@@ -90,18 +93,24 @@ def infer_model(frames, model, log_file):
         # imgs = imgs.astype(np.float32)/255.0
         # imgs = np.rollaxis(imgs, 2, 0)
         # inp = np.expand_dims(imgs, axis=0)
-
+    start_idx = 0
     for i, batch in enumerate(infer_dataloader):
         inf_start = time.time()
         out = model(torch.from_numpy(batch).float().to(device))
         inf_end = time.time()
-
+        model_results.write(f'Batch: {i} \n {out} \n {out.shape} \n \n')
         output = out.argmax(dim=1).detach().cpu().numpy()
-        x_pred, y_pred = postprocess(output)
-        post_process = time.time()
-        log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
-        ball_track.append((x_pred, y_pred))
-        out_frames.append(img)
+        try:
+            x_pred, y_pred = postprocess(output)
+            # post_process = time.time()
+            # log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
+            ball_track.append((x_pred, y_pred))
+        except:
+            print(traceback.format_exc())
+            continue
+        for j in range(start_idx, start_idx + args.batch_size):
+            img = cv2.resize(frames[j], (width, height))
+            out_frames.append(img)
         if ball_track[-1][0] and ball_track[-2][0]:
             dist = distance.euclidean(ball_track[-1], ball_track[-2])
         else:
@@ -230,7 +239,7 @@ if __name__ == '__main__':
     frames, fps = read_video(args.video_path)
     read_video_time = time.time()
     log_file.write(f'time taken to read video {read_video_time - load_time} \n \n')
-    ball_track, dists, out_frames = infer_model(frames, model, log_file)
+    ball_track, dists, out_frames = infer_model(frames, model, log_file, args)
     inference_time = time.time()
     log_file.write(f'{inference_time} - {read_video_time}')
     with open('ball_track_raw.txt', 'w+') as f:
