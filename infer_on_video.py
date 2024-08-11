@@ -14,8 +14,8 @@ from torch.utils.data import Dataset, DataLoader
 
 
 # set number of intra op threads == 4
-torch.set_num_threads(2)
-torch.set_num_interop_threads(2)
+# torch.set_num_threads(2)
+# torch.set_num_interop_threads(2)
 
 # Dataloader class
 class trackNetDataset(Dataset):
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     log_file.write(f'time taken to read video {read_video_time - load_time} \n \n')
     ball_track, dists, out_frames = infer_model(frames, model, log_file, args)
     inference_time = time.time()
-    log_file.write(f'{inference_time} - {read_video_time}')
+    log_file.write(f'{inference_time - read_video_time} \n \n')
     with open('ball_track_raw.txt', 'w+') as f:
         f.write(str(ball_track))
         f.close()
@@ -304,7 +304,8 @@ if __name__ == '__main__':
         with open('ball_track_extrapolated.txt', 'w+') as f:
             f.write(str(ball_track))
             f.close()
-        
+
+    log_file.write(f'Total time taken: {interp_time - start_time}')
     write_track(frames, ball_track, args.video_out_path, fps)
     log_file.close()
     
