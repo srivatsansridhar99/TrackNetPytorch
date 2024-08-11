@@ -48,7 +48,8 @@ class BallTrackerNet(nn.Module):
                   
     def forward(self, x, testing=False): 
         batch_size = x.size(0)
-        print(batch_size)
+        print('batch size', batch_size)
+        print('input size', x.shape)
         x = self.conv1(x)
         print('conv1', x.shape)
         x = self.conv2(x)
