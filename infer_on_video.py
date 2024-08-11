@@ -19,11 +19,11 @@ torch.set_num_interop_threads(2)
 
 # Dataloader class
 class trackNetDataset(Dataset):
-    def __init__(self, image_list):
+    def __init__(self, image_list, width=640, height=360):
         self.image_list = image_list
         # self.return_image_list = image_list[start_index: ]
-        self.width = 640
-        self.height = 320
+        self.width = width
+        self.height = height
 
     def __len__(self):
         return len(self.image_list)
