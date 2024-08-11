@@ -38,8 +38,8 @@ class trackNetDataset(Dataset):
             imgs = np.concatenate((img, img, img), axis=2)
         imgs = imgs.astype(np.float32) / 255.0
         imgs = np.rollaxis(imgs, 2, 0)
-        inp = np.expand_dims(imgs, axis=0)
-        return inp
+        # inp = np.expand_dims(imgs, axis=0)
+        return imgs
 
     def __getitem__(self, idx):
         processed_img = self.process_images(idx)
