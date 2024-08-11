@@ -96,7 +96,9 @@ def infer_model(frames, model, log_file, args):
     start_idx = 0
     for i, batch in enumerate(infer_dataloader):
         inf_start = time.time()
-        out = model(torch.from_numpy(batch).float().to(device))
+        # out = model(torch.from_numpy(batch).float().to(device))
+        with torch.no_grad():
+            out = model(torch.tensor(batch, dtype=torch.float32, device=device))
         inf_end = time.time()
         model_results.write(f'Batch: {i} \n {out} \n {out.shape} \n \n')
         output = out.argmax(dim=1).detach().cpu().numpy()
