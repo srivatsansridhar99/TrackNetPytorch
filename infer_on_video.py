@@ -83,7 +83,7 @@ def infer_model(frames, model, log_file, args):
     out_frames = []
     model_results = open('../model_results.txt', 'w+')
     infer_dataset = trackNetDataset(frames)
-    infer_dataloader = DataLoader(infer_dataset, batch_size=args.batch_size, num_workers=6)
+    infer_dataloader = DataLoader(infer_dataset, batch_size=args.batch_size, num_workers=10)
 
     # for num in tqdm(range(2, len(frames))):
         # img = cv2.resize(frames[num], (width, height))
