@@ -62,7 +62,7 @@ def infer_model(frames, model, log_file):
         inp = np.expand_dims(imgs, axis=0)
         inf_start = time.time()
         out = model(torch.from_numpy(inp).float().to(device))
-        model_results.write(f'Iteration: {num} \n {out} \n \n')
+        model_results.write(f'Iteration: {num} \n {out} \n {out.shape} \n \n')
         inf_end = time.time()
 
         output = out.argmax(dim=1).detach().cpu().numpy()
