@@ -4,7 +4,7 @@ from model import BallTrackerNet
 import torch
 import cv2
 from general import postprocess, process_batch
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 import argparse
 from itertools import groupby
@@ -94,7 +94,7 @@ def infer_model(frames, model, log_file, args):
         # imgs = np.rollaxis(imgs, 2, 0)
         # inp = np.expand_dims(imgs, axis=0)
     start_idx = 0
-    for i, batch in enumerate(infer_dataloader):
+    for i, batch in tqdm(enumerate(infer_dataloader)):
         inf_start = time.time()
         # out = model(torch.from_numpy(batch).float().to(device))
         with torch.no_grad():
