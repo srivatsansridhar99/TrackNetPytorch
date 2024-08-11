@@ -130,7 +130,7 @@ def infer_model(frames, model, log_file, args):
                     dist = -1
                 dists.append(dist)
         except Exception as e:
-            print(f"Error in postprocessing: {str(e)}")
+            print(f"Error in postprocessing for batch: {i}: {str(e)}")
             print(traceback.format_exc())
             continue
 
