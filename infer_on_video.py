@@ -97,16 +97,16 @@ def infer_model(frames, model, log_file, args):
     for i, batch in tqdm(enumerate(infer_dataloader)):
         inf_start = time.time()
         # out = model(torch.from_numpy(batch).float().to(device))
-        with torch.no_grad():
-            out = model(batch.to(device))
+        # with torch.no_grad():
+        out = model(batch.to(device))
         inf_end = time.time()
         model_results.write(f'Batch: {i} \n {str(out)} \n {out.shape} \n \n')
         # output = out.argmax(dim=1).detach().cpu().numpy()
         # try:
         #     x_pred, y_pred = postprocess(output)
         #     # post_process = time.time()
-        #     # log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start} post process time: {post_process - inf_end} \n')
-        #     ball_track.append((x_pred, y_pred))
+        log_file.write(f'Model inference iter {i} inference time: {inf_end - inf_start}\n')
+            # ball_track.append((x_pred, y_pred))
         # except:
         #     print(traceback.format_exc())
         #     continue
