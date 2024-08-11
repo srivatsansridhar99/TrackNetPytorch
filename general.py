@@ -87,29 +87,71 @@ def validate(model, val_loader, device, epoch, min_dist=5):
     return np.mean(losses), precision, recall, f1
 
 
+# def postprocess(feature_map, scale=2):
+#     feature_map *= 255
+#     feature_map = feature_map.reshape((360, 640))
+#     feature_map = feature_map.astype(np.uint8)
+#     ret, heatmap = cv2.threshold(feature_map, 127, 255, cv2.THRESH_BINARY)
+#     circles = cv2.HoughCircles(heatmap, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=50, param2=2, minRadius=2,
+#                                maxRadius=7)
+#     x,y = None, None
+#     if circles is not None:
+#         if len(circles) == 1:
+#             x = circles[0][0][0]*scale
+#             y = circles[0][0][1]*scale
+#     return x, y
+#
+# def process_batch(batch_output, scale=2):
+#     """
+#     Process a batch of feature maps
+#     """
+#     results = []
+#     for feature_map in batch_output:
+#         x, y = postprocess(feature_map, scale)
+#         results.append((x, y))
+#     return results
+
 def postprocess(feature_map, scale=2):
+    """
+    Process a single feature map
+    """
+    print(f"Feature map shape: {feature_map.shape}")
+
+    # Check if the feature map is 3D (channel, height, width)
+    if len(feature_map.shape) == 3:
+        # If it's 3D, take the first channel or sum across channels
+        feature_map = feature_map[0]  # or np.sum(feature_map, axis=0)
+
+    # Resize the feature map if it's not 360x640
+    if feature_map.shape != (360, 640):
+        feature_map = cv2.resize(feature_map, (640, 360))
+
     feature_map *= 255
-    feature_map = feature_map.reshape((360, 640))
     feature_map = feature_map.astype(np.uint8)
     ret, heatmap = cv2.threshold(feature_map, 127, 255, cv2.THRESH_BINARY)
     circles = cv2.HoughCircles(heatmap, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=50, param2=2, minRadius=2,
                                maxRadius=7)
-    x,y = None, None
+    x, y = None, None
     if circles is not None:
         if len(circles) == 1:
-            x = circles[0][0][0]*scale
-            y = circles[0][0][1]*scale
+            x = circles[0][0][0] * scale
+            y = circles[0][0][1] * scale
     return x, y
+
 
 def process_batch(batch_output, scale=2):
     """
     Process a batch of feature maps
     """
+    print(f"Batch output shape: {batch_output.shape}")
     results = []
     for feature_map in batch_output:
         x, y = postprocess(feature_map, scale)
         results.append((x, y))
     return results
+
+
+
 
 
 
